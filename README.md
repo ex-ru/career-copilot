@@ -43,66 +43,77 @@ Career Copilot решает главную боль активного поис�
 
 ---
 
-## 🚀 Быстрый старт за 2 минуты
+## 🚀 Два режима использования
 
-### 1. Клонирование и установка зависимостей
+Вы можете использовать проект **двумя разными способами** в зависимости от ваших предпочтений:
 
+---
+
+### Вариант А. Внутри AI-редакторов (Antigravity, Claude Code, Cursor, Codex) — БЕЗ API-КЛЮЧЕЙ! 🪄
+
+Если у вас уже установлен **Google Antigravity**, **Claude Code**, **Cursor** или **Codex/Copilot**, вам **НЕ НУЖНО настраивать никакие API-ключи** и тратить деньги на токены! Встроенный AI-агент редактора сам берет на себя роль карьерного консультанта.
+
+1. **Склонируйте и откройте репозиторий** в вашей среде (Antigravity / Cursor / Claude Code):
+   ```bash
+   git clone https://github.com/ex-ru/career-copilot.git
+   ```
+2. **Установите зависимости** (нужны только для сборки Word DOCX):
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Просто общайтесь с агентом в чате!**  
+   Агент автоматически подхватит инструкции из [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md) и [`.cursorrules`](.cursorrules).
+   * Напишите: *"Проведи со мной карьерное интервью и составь skills_matrix.md"*
+   * Положите файл вакансии в `data/vacancies/` (или отправьте ссылку в чат) и напишите: *"Адаптируй резюме под эту вакансию"*.
+   * Агент сам сформирует аналитику, напишет адаптированное резюме, персонализированное письмо и скомпилирует стилизованный Word-файл (`.docx`)!
+
+---
+
+### Вариант Б. Автономное CLI-приложение в терминале (с API или локальной моделью) 💻
+
+Если вы хотите запускать скрипт независимо от редактора в любом обычном терминале:
+
+#### 1. Установка зависимостей
 ```bash
-git clone https://github.com/<your-username>/career-copilot.git
-cd career-copilot
-
-# Создайте и активируйте виртуальное окружение (рекомендуется)
 python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
-
-# Установите зависимости
+# Windows: venv\Scripts\activate | Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Настройка подключения к AI
-
+#### 2. Настройка подключения к AI
 Скопируйте шаблон конфигурации:
 ```bash
 cp .env.example .env
 ```
-Откройте файл `.env` в любом редакторе и укажите ваш ключ.
+Откройте файл `.env` и укажите ваш вариант:
 
-**Примеры настройки в `.env`:**
+* **OpenAI (ChatGPT):**
+  ```env
+  OPENAI_API_KEY=sk-proj-...
+  LLM_MODEL=gpt-4o-mini
+  ```
+* **Google Gemini (быстро и экономично):**
+  ```env
+  OPENAI_API_KEY=AIzaSy...
+  OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+  LLM_MODEL=gemini-2.0-flash
+  ```
+* **Локальный сервер llama.cpp (100% оффлайн в локальной сети):**
+  ```env
+  OPENAI_BASE_URL=http://192.168.1.166:8080/v1
+  LLM_MODEL=default
+  ```
+* **Бесплатный локальный Ollama:**
+  ```env
+  OPENAI_BASE_URL=http://localhost:11434/v1
+  LLM_MODEL=llama3.1
+  ```
 
-*Вариант 1: OpenAI (ChatGPT)*
-```env
-OPENAI_API_KEY=sk-proj-...
-LLM_MODEL=gpt-4o-mini
-```
-
-*Вариант 2: Google Gemini (быстро и экономично)*
-```env
-OPENAI_API_KEY=AIzaSy...
-OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-LLM_MODEL=gemini-2.0-flash
-```
-
-*Вариант 3: Полностью бесплатный локальный Ollama (100% оффлайн)*
-```env
-OPENAI_API_KEY=ollama
-OPENAI_BASE_URL=http://localhost:11434/v1
-LLM_MODEL=llama3.1
-```
-
-### 3. Запуск
-
-Запустите интерактивный терминальный интерфейс:
+#### 3. Запуск интерактивного меню
 ```bash
 python run.py
 ```
-
-Проверить подключение к модели можно командой:
-```bash
-python run.py --test-ai
-```
+*(Проверить подключение можно командой `python run.py --test-ai`).*
 
 ---
 
