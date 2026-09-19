@@ -30,6 +30,7 @@ wheels/
 *.pem
 
 # User Data (Candidate Privacy)
+data/skills_matrix.md
 data/inputs/*
 !data/inputs/.gitkeep
 data/vacancies/*
