@@ -73,7 +73,13 @@ class LLMClient:
             temperature=temperature if temperature is not None else self.cfg.temperature,
             max_tokens=max_tokens if max_tokens is not None else self.cfg.max_tokens
         )
-        return response.choices[0].message.content or ""
+        choice = response.choices[0]
+        content = choice.message.content or ""
+        if not content.strip():
+            reasoning = getattr(choice.message, 'reasoning_content', '') or ""
+            if reasoning.strip():
+                content = reasoning.strip()
+        return content
 
     def stream_chat(
         self,

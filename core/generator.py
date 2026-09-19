@@ -43,17 +43,18 @@ class PackageGenerator:
             "   ## Профессиональное резюме (Summary)\n"
             "   ## Ключевые компетенции и стек (Core Competencies & Tech Stack)\n"
             "   ## Опыт работы (Work Experience: Компания, Роль, Период, Достижения, Стек)\n"
-            "   ## Сертификаты и образование (Certifications & Education)\n"
+            "   ## Сертификаты и образование (Certifications & Education)\n\n"
+            "ВАЖНО: Пиши сразу итоговый текст резюме в Markdown без тегов <think> и рассуждений."
         )
 
         user_prompt = (
-            f"--- АНАЛИЗ СООТВЕТСТВИЯ ВАКАНСИИ ---\n{matching_analysis[:6000]}\n\n"
-            f"--- ВАКАНСИЯ ---\n{vacancy_text[:6000]}\n\n"
-            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_md[:12000]}\n\n"
+            f"--- АНАЛИЗ СООТВЕТСТВИЯ ВАКАНСИИ ---\n{matching_analysis[:2500]}\n\n"
+            f"--- ВАКАНСИЯ ---\n{vacancy_text[:3000]}\n\n"
+            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_md[:4000]}\n\n"
             f"Сформируй адаптированное резюме на языке: {lang.upper()}."
         )
 
-        return llm.complete(system_prompt, user_prompt, temperature=0.25, max_tokens=3500)
+        return llm.complete(system_prompt, user_prompt, temperature=0.25, max_tokens=2500)
 
     @classmethod
     def generate_cover_letter(
@@ -78,17 +79,18 @@ class PackageGenerator:
             "1. Приветствие и четкое позиционирование (на какую роль откликаюсь и почему этот профиль идеален).\n"
             "2. Ключевая ценность: 2-3 конкретных факта/проекта из опыта, напрямую закрывающие боли вакансии.\n"
             "3. Релевантные детали (локация, готовность к формату, знание стека).\n"
-            "4. Call to Action: вежливое приглашение на 15-минутный звонок для обсуждения задач команды."
+            "4. Call to Action: вежливое приглашение на 15-минутный звонок для обсуждения задач команды.\n\n"
+            "ВАЖНО: Пиши сразу итоговый текст письма в Markdown без тегов <think>."
         )
 
         user_prompt = (
-            f"--- АНАЛИЗ СООТВЕТСТВИЯ ---\n{matching_analysis[:4000]}\n\n"
-            f"--- ВАКАНСИЯ ---\n{vacancy_text[:4000]}\n\n"
-            f"--- ПРОФИЛЬ КАНДИДАТА ---\n{profile_md[:6000]}\n\n"
+            f"--- АНАЛИЗ СООТВЕТСТВИЯ ---\n{matching_analysis[:1500]}\n\n"
+            f"--- ВАКАНСИЯ ---\n{vacancy_text[:2000]}\n\n"
+            f"--- ПРОФИЛЬ КАНДИДАТА ---\n{profile_md[:2500]}\n\n"
             f"Сформируй идеальный Cover Letter на языке: {lang.upper()}."
         )
 
-        return llm.complete(system_prompt, user_prompt, temperature=0.3, max_tokens=1500)
+        return llm.complete(system_prompt, user_prompt, temperature=0.3, max_tokens=1200)
 
     @classmethod
     def process_vacancy_package(

@@ -44,13 +44,14 @@ class JobMatcher:
             "- Чего не хватает и как честно компенсировать это смежным опытом\n\n"
             "## 5. Стратегия адаптации резюме и Cover Letter\n"
             "- На каких проектах сделать акцент\n"
-            "- Какие формулировки и ключевые слова использовать для прохождения ATS\n"
+            "- Какие формулировки и ключевые слова использовать для прохождения ATS\n\n"
+            "ВАЖНО: Пиши сразу итоговый структурированный Markdown без тегов <think> и без долгих рассуждений."
         )
 
         user_prompt = (
-            f"--- ВАКАНСИЯ: {vacancy_title} ---\n{vacancy_text[:10000]}\n\n"
-            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_markdown[:14000]}\n\n"
+            f"--- ВАКАНСИЯ: {vacancy_title} ---\n{vacancy_text[:3500]}\n\n"
+            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_markdown[:4500]}\n\n"
             "Проведи глубокий аудит и сформируй полный matching_analysis.md."
         )
 
-        return llm.complete(system_prompt, user_prompt, temperature=0.2, max_tokens=3500)
+        return llm.complete(system_prompt, user_prompt, temperature=0.2, max_tokens=2500)
