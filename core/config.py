@@ -38,6 +38,16 @@ class AppConfig(BaseModel):
     templates_dir: Path = TEMPLATES_DIR
 
     @property
+    def normalized_base_url(self) -> Optional[str]:
+        """Ensures base_url ends with /v1 if missing for local servers."""
+        if not self.base_url:
+            return None
+        url = self.base_url.rstrip("/")
+        if not url.endswith("/v1"):
+            return f"{url}/v1"
+        return url
+
+    @property
     def provider_name(self) -> str:
         """Determines the friendly provider name based on URL and model."""
         if not self.base_url:
@@ -49,17 +59,21 @@ class AppConfig(BaseModel):
             return "Google Gemini (OpenAI Compat)"
         if "localhost:11434" in url or "ollama" in url:
             return "Ollama (Local Offline)"
+        if "8080" in url or "llama" in url:
+            return "llama.cpp (Local Server)"
         if "deepseek" in url:
             return "DeepSeek API"
         if "127.0.0.1:1234" in url or "lmstudio" in url:
             return "LM Studio (Local Offline)"
+        if any(ip in url for ip in ["192.168.", "10.", "172.", "localhost", "127.0.0.1"]):
+            return f"Local / LAN Server ({self.base_url})"
         return f"Custom API ({self.base_url})"
 
     @property
     def is_configured(self) -> bool:
         """Returns True if minimum required settings to call AI are present."""
-        # For Ollama / local, api_key can be anything (even dummy)
-        if self.base_url and ("localhost" in self.base_url or "127.0.0.1" in self.base_url):
+        # For Ollama / llama.cpp / local LAN servers, api_key can be dummy
+        if self.base_url and any(x in self.base_url for x in ["localhost", "127.0.0.1", "192.168.", "10.", "172.", "8080", "11434"]):
             return True
         return bool(self.api_key and self.api_key.strip())
 

@@ -25,8 +25,9 @@ class LLMClient:
                 # Local models like Ollama might not require a real key
                 kwargs["api_key"] = "local-dummy-key"
 
-            if self.cfg.base_url:
-                kwargs["base_url"] = self.cfg.base_url
+            base_url = self.cfg.normalized_base_url
+            if base_url:
+                kwargs["base_url"] = base_url
 
             self._client = OpenAI(**kwargs)
         return self._client
@@ -38,16 +39,19 @@ class LLMClient:
     def test_connection(self) -> Tuple[bool, str]:
         """Tests connection with a lightweight prompt."""
         if not self.cfg.is_configured:
-            return False, "API ключ не настроен. Проверьте файл .env."
+            return False, "API ключ или адрес локального сервера не настроен. Проверьте файл .env."
         try:
             response = self.client.chat.completions.create(
                 model=self.cfg.model,
-                messages=[{"role": "user", "content": "Привет, подтверди готовность в одном предложении."}],
-                max_tokens=30,
+                messages=[{"role": "user", "content": "Привет, подтверди готовность в одном коротком предложении."}],
+                max_tokens=150,
                 temperature=0.0
             )
-            msg = response.choices[0].message.content or "OK"
-            return True, f"Соединение успешно ({self.cfg.provider_name}, модель: {self.cfg.model}): {msg.strip()}"
+            raw_msg = response.choices[0].message.content
+            if not raw_msg and hasattr(response.choices[0].message, 'reasoning_content'):
+                raw_msg = response.choices[0].message.reasoning_content
+            msg = (raw_msg or "Готовность подтверждена (OK)").strip()
+            return True, f"Соединение успешно ({self.cfg.provider_name}, модель: {self.cfg.model}): {msg}"
         except Exception as e:
             return False, f"Ошибка подключения к AI: {str(e)}"
 
