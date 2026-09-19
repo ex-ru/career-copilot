@@ -43,18 +43,20 @@ class PackageGenerator:
             "   ## Профессиональное резюме (Summary)\n"
             "   ## Ключевые компетенции и стек (Core Competencies & Tech Stack)\n"
             "   ## Опыт работы (Work Experience: Компания, Роль, Период, Достижения, Стек)\n"
-            "   ## Сертификаты и образование (Certifications & Education)\n\n"
-            "ВАЖНО: Пиши сразу итоговый текст резюме в Markdown без тегов <think> и рассуждений."
+            "   ## Сертификаты и образование (Certifications & Education)\n"
         )
 
         user_prompt = (
-            f"--- АНАЛИЗ СООТВЕТСТВИЯ ВАКАНСИИ ---\n{matching_analysis[:2500]}\n\n"
-            f"--- ВАКАНСИЯ ---\n{vacancy_text[:3000]}\n\n"
-            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_md[:4000]}\n\n"
+            f"--- АНАЛИЗ СООТВЕТСТВИЯ ВАКАНСИИ ---\n{matching_analysis}\n\n"
+            f"--- ВАКАНСИЯ ---\n{vacancy_text}\n\n"
+            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_md}\n\n"
             f"Сформируй адаптированное резюме на языке: {lang.upper()}."
         )
 
-        return llm.complete(system_prompt, user_prompt, temperature=0.25, max_tokens=2500)
+        result = llm.complete(system_prompt, user_prompt, temperature=0.25, max_tokens=3500)
+        if not result or not result.strip():
+            raise RuntimeError(f"Модель вернула пустой ответ при генерации резюме ({lang.upper()}).")
+        return result
 
     @classmethod
     def generate_cover_letter(
@@ -79,18 +81,20 @@ class PackageGenerator:
             "1. Приветствие и четкое позиционирование (на какую роль откликаюсь и почему этот профиль идеален).\n"
             "2. Ключевая ценность: 2-3 конкретных факта/проекта из опыта, напрямую закрывающие боли вакансии.\n"
             "3. Релевантные детали (локация, готовность к формату, знание стека).\n"
-            "4. Call to Action: вежливое приглашение на 15-минутный звонок для обсуждения задач команды.\n\n"
-            "ВАЖНО: Пиши сразу итоговый текст письма в Markdown без тегов <think>."
+            "4. Call to Action: вежливое приглашение на 15-минутный звонок для обсуждения задач команды."
         )
 
         user_prompt = (
-            f"--- АНАЛИЗ СООТВЕТСТВИЯ ---\n{matching_analysis[:1500]}\n\n"
-            f"--- ВАКАНСИЯ ---\n{vacancy_text[:2000]}\n\n"
-            f"--- ПРОФИЛЬ КАНДИДАТА ---\n{profile_md[:2500]}\n\n"
+            f"--- АНАЛИЗ СООТВЕТСТВИЯ ---\n{matching_analysis}\n\n"
+            f"--- ВАКАНСИЯ ---\n{vacancy_text}\n\n"
+            f"--- ПРОФИЛЬ КАНДИДАТА ---\n{profile_md}\n\n"
             f"Сформируй идеальный Cover Letter на языке: {lang.upper()}."
         )
 
-        return llm.complete(system_prompt, user_prompt, temperature=0.3, max_tokens=1200)
+        result = llm.complete(system_prompt, user_prompt, temperature=0.3, max_tokens=1500)
+        if not result or not result.strip():
+            raise RuntimeError(f"Модель вернула пустой ответ при генерации Cover Letter ({lang.upper()}).")
+        return result
 
     @classmethod
     def process_vacancy_package(
@@ -108,6 +112,12 @@ class PackageGenerator:
         2. Tailored CV -> MD & DOCX (RU and/or EN)
         3. Cover Letter -> MD & DOCX (RU and/or EN)
         """
+        if not profile_md or len(profile_md.strip()) < 50:
+            raise ValueError("Мастер-профиль кандидата пуст! Сначала заполните информацию о кандидате (пункт 1 меню).")
+
+        if not vacancy_text or len(vacancy_text.strip()) < 50:
+            raise ValueError(f"Текст вакансии '{vacancy_title}' пуст или слишком короткий (менее 50 символов).")
+
         output_base = output_dir or config.output_dir
         # Sanitize folder name
         safe_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in vacancy_title).strip("_")
@@ -131,6 +141,9 @@ class PackageGenerator:
         if progress_callback:
             progress_callback(f"Анализирую требования вакансии '{vacancy_title}'...")
         matching_md = JobMatcher.analyze_match(profile_md, vacancy_text, vacancy_title)
+        if not matching_md or not matching_md.strip():
+            raise RuntimeError(f"Модель вернула пустой результат при анализе вакансии '{vacancy_title}'.")
+
         matching_file = pkg_dir / "matching_analysis.md"
         matching_file.write_text(matching_md, encoding="utf-8")
         created_files.append(str(matching_file))
@@ -143,6 +156,9 @@ class PackageGenerator:
             if progress_callback:
                 progress_callback(f"Генерирую адаптированное резюме ({lang.upper()})...")
             cv_md = cls.generate_tailored_cv(profile_md, vacancy_text, matching_md, lang=lang)
+            if not cv_md or not cv_md.strip():
+                raise RuntimeError(f"Модель вернула пустой результат при генерации резюме ({lang.upper()}).")
+
             cv_md_file = pkg_dir / f"CV_Tailored{lang_suffix}.md"
             cv_md_file.write_text(cv_md, encoding="utf-8")
             created_files.append(str(cv_md_file))
@@ -158,6 +174,9 @@ class PackageGenerator:
             if progress_callback:
                 progress_callback(f"Формирую Cover Letter ({lang.upper()})...")
             cl_md = cls.generate_cover_letter(profile_md, vacancy_text, matching_md, lang=lang)
+            if not cl_md or not cl_md.strip():
+                raise RuntimeError(f"Модель вернула пустой результат при генерации Cover Letter ({lang.upper()}).")
+
             cl_md_file = pkg_dir / f"Cover_Letter{lang_suffix}.md"
             cl_md_file.write_text(cl_md, encoding="utf-8")
             created_files.append(str(cl_md_file))

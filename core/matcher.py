@@ -25,6 +25,11 @@ class JobMatcher:
         """
         Produces a comprehensive matching analysis markdown document.
         """
+        if not profile_markdown or len(profile_markdown.strip()) < 50:
+            raise ValueError("Мастер-профиль кандидата пуст или содержит недостаточно данных.")
+        if not vacancy_text or len(vacancy_text.strip()) < 50:
+            raise ValueError(f"Текст вакансии '{vacancy_title}' пуст или слишком короткий (менее 50 символов).")
+
         system_prompt = (
             "Ты — ведущий эксперт по карьерному трекингу и техническому отбору кандидатов. "
             "Твоя задача — сопоставить профиль кандидата с требованиями конкретной вакансии и составить "
@@ -44,14 +49,19 @@ class JobMatcher:
             "- Чего не хватает и как честно компенсировать это смежным опытом\n\n"
             "## 5. Стратегия адаптации резюме и Cover Letter\n"
             "- На каких проектах сделать акцент\n"
-            "- Какие формулировки и ключевые слова использовать для прохождения ATS\n\n"
-            "ВАЖНО: Пиши сразу итоговый структурированный Markdown без тегов <think> и без долгих рассуждений."
+            "- Какие формулировки и ключевые слова использовать для прохождения ATS\n"
         )
 
         user_prompt = (
-            f"--- ВАКАНСИЯ: {vacancy_title} ---\n{vacancy_text[:3500]}\n\n"
-            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_markdown[:4500]}\n\n"
+            f"--- ВАКАНСИЯ: {vacancy_title} ---\n{vacancy_text[:20000]}\n\n"
+            f"--- МАСТЕР-ПРОФИЛЬ КАНДИДАТА ---\n{profile_markdown[:30000]}\n\n"
             "Проведи глубокий аудит и сформируй полный matching_analysis.md."
         )
 
-        return llm.complete(system_prompt, user_prompt, temperature=0.2, max_tokens=2500)
+        result = llm.complete(system_prompt, user_prompt, temperature=0.2, max_tokens=3500)
+        if not result or not result.strip():
+            raise RuntimeError(
+                f"Модель вернула пустой ответ при анализе вакансии '{vacancy_title}'. "
+                "Проверьте настройки модели, соединение или размер контекстного окна."
+            )
+        return result

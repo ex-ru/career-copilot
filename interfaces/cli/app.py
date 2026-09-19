@@ -298,7 +298,12 @@ class CareerCopilotCLI:
             Prompt.ask("[dim]Enter для возврата...[/dim]")
             return
 
-        profile_md = CandidateProfiler.load_profile()
+        profile_md = CandidateProfiler.load_profile().strip()
+        if len(profile_md) < 50:
+            notify_error("Мастер-профиль кандидата (data/skills_matrix.md) пуст! Сначала заполните информацию о кандидате в пункте 1 меню.")
+            Prompt.ask("[dim]Enter для возврата...[/dim]")
+            return
+
         vacancies = DocumentParser.scan_directory(config.vacancies_dir)
 
         if not vacancies:
@@ -317,6 +322,12 @@ class CareerCopilotCLI:
             Prompt.ask("[dim]Enter...[/dim]")
             return
 
+        # Validate vacancy content
+        if not selected["content"] or len(selected["content"].strip()) < 50:
+            notify_error(f"Файл вакансии '{selected['name']}' пуст или содержит слишком мало текста (менее 50 символов)!")
+            Prompt.ask("[dim]Enter для возврата...[/dim]")
+            return
+
         console.print("\n[bold]Языковой режим пакета:[/bold]")
         console.print("1. [bold]Both (RU + EN)[/bold] — сгенерировать резюме и Cover Letter на обоих языках")
         console.print("2. [bold]RU only[/bold] — только на русском языке")
@@ -327,22 +338,25 @@ class CareerCopilotCLI:
         lang_mode = mode_map[lang_choice]
 
         title = Path(selected["name"]).stem
-        with console.status("[bold green]Генерирую полный пакет документов...[/bold green]") as status:
-            def update_status(msg):
-                status.update(f"[bold green]{msg}[/bold green]")
+        try:
+            with console.status("[bold green]Генерирую полный пакет документов...[/bold green]") as status:
+                def update_status(msg):
+                    status.update(f"[bold green]{msg}[/bold green]")
 
-            res = PackageGenerator.process_vacancy_package(
-                vacancy_title=title,
-                vacancy_text=selected["content"],
-                profile_md=profile_md,
-                language_mode=lang_mode,
-                progress_callback=update_status
-            )
+                res = PackageGenerator.process_vacancy_package(
+                    vacancy_title=title,
+                    vacancy_text=selected["content"],
+                    profile_md=profile_md,
+                    language_mode=lang_mode,
+                    progress_callback=update_status
+                )
 
-        console.print(f"\n[bold green]✔ Пакет успешно создан в каталоге:[/bold green] {res['directory']}")
-        console.print("[bold]Созданные файлы:[/bold]")
-        for f in res["files"]:
-            console.print(f"  📄 {Path(f).name}")
+            console.print(f"\n[bold green][OK] Пакет успешно создан в каталоге:[/bold green] {res['directory']}")
+            console.print("[bold]Созданные файлы:[/bold]")
+            for f in res["files"]:
+                console.print(f"  📄 {Path(f).name}")
+        except Exception as e:
+            notify_error(f"Ошибка при генерации пакета под '{title}':\n{e}")
 
         Prompt.ask("\n[dim]Нажмите Enter для возврата...[/dim]")
 
@@ -359,7 +373,12 @@ class CareerCopilotCLI:
             Prompt.ask("[dim]Enter для возврата...[/dim]")
             return
 
-        profile_md = CandidateProfiler.load_profile()
+        profile_md = CandidateProfiler.load_profile().strip()
+        if len(profile_md) < 50:
+            notify_error("Мастер-профиль кандидата (data/skills_matrix.md) пуст! Сначала заполните информацию о кандидате в пункте 1 меню.")
+            Prompt.ask("[dim]Enter для возврата...[/dim]")
+            return
+
         vacancies = DocumentParser.scan_directory(config.vacancies_dir)
 
         if not vacancies:
@@ -371,24 +390,31 @@ class CareerCopilotCLI:
         if not Confirm.ask("Запустить генерацию пакетов под все вакансии?", default=True):
             return
 
+        success_count = 0
         for idx, vac in enumerate(vacancies, 1):
             title = Path(vac["name"]).stem
             console.print(f"\n[bold cyan][{idx}/{len(vacancies)}] Обработка: {title}...[/bold cyan]")
-            with console.status(f"[bold green]Генерация {title}...[/bold green]") as status:
-                PackageGenerator.process_vacancy_package(
-                    vacancy_title=title,
-                    vacancy_text=vac["content"],
-                    profile_md=profile_md,
-                    progress_callback=lambda m: status.update(f"[bold green]{m}[/bold green]")
-                )
-            notify_success(f"Завершена: {title}")
+            try:
+                with console.status(f"[bold green]Генерация {title}...[/bold green]") as status:
+                    PackageGenerator.process_vacancy_package(
+                        vacancy_title=title,
+                        vacancy_text=vac["content"],
+                        profile_md=profile_md,
+                        progress_callback=lambda m: status.update(f"[bold green]{m}[/bold green]")
+                    )
+                notify_success(f"Завершена: {title}")
+                success_count += 1
+            except Exception as e:
+                notify_error(f"Ошибка при обработке {title}: {e}")
 
-        # Build aggregate report
-        console.print("\n[bold cyan]Сборка сводного отчета по всем вакансиям...[/bold cyan]")
-        with console.status("[bold green]Формирую vacancy_analysis_report.md...[/bold green]"):
-            ReportBuilder.generate_aggregate_report()
-
-        notify_success("Пакетная обработка завершена! Сводный отчет сохранен в data/output/vacancy_analysis_report.md")
+        # Build aggregate report if at least one succeeded
+        if success_count > 0:
+            console.print("\n[bold cyan]Сборка сводного отчета по всем вакансиям...[/bold cyan]")
+            with console.status("[bold green]Формирую vacancy_analysis_report.md...[/bold green]"):
+                ReportBuilder.generate_aggregate_report()
+            notify_success("Пакетная обработка завершена! Сводный отчет сохранен в data/output/vacancy_analysis_report.md")
+        else:
+            notify_warning("Ни одна вакансия не была успешно обработана.")
         Prompt.ask("[dim]Enter для продолжения...[/dim]")
 
     # --------------------------------------------------------------------------
